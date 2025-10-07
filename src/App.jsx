@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Routes, Route, Link, useSearchParams, Outlet } from "react-router-dom";
 
@@ -138,14 +138,9 @@ function HookForm() {
   );
 }
 
-function App() {
+function TanstackGetAllAndPostAndDelete() {
   const queryClient = useQueryClient();
-  const [product, setProduct] = useState({
-    id: '',
-    name: '',
-    price: ''
-  });
-
+  const [id, setId] = useState(0);
   const { data: products, isLoading, error } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
@@ -157,7 +152,44 @@ function App() {
     }
   });
 
-  const mutation = useMutation({
+  const deleteProduct = useMutation({
+    mutationFn: async (productId) => {
+      await fetch(`https://localhost:7284/api/product/${productId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['products']);
+    }
+  });
+
+  if (isLoading) return <h2>Loading...</h2>;
+  if (error) return <h2>Error fetching products</h2>;
+
+  return (
+    <>
+      <h1>ID: {id}</h1>
+      <div className="border p-5">
+        {products.map((product) => (
+          <>
+            <h1>ID:{product.id}, Name: {product.name}, Price: {product.price}</h1>
+            <button className="border p-2" onClick={() => setId(product.id)}>Get Data</button>
+            <button className="border p-2" onClick={() => deleteProduct.mutate(product.id)}>Delete Data</button>
+          </>
+        ))}
+      </div>
+      {
+        id == 0 ? <AddForm /> : <UpdateForm id={id} resetId={setId} />
+      }
+    </>
+  );
+}
+
+function AddForm() {
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, reset } = useForm();
+
+  const addProduct = useMutation({
     mutationFn: async (newProduct) => {
       const response = await fetch('https://localhost:7284/api/product', {
         method: 'POST',
@@ -165,45 +197,102 @@ function App() {
         body: JSON.stringify(newProduct)
       });
 
-    }, onSuccess: () => {
-      queryClient.invalidateQueries(['products']);
+      return await response.json();
+    },
+    onSuccess: (newData) => {
+      queryClient.setQueryData(['products'], (oldData) => [...oldData, newData]);
     }
   });
 
-  const inputHandler = (e) => {
-    setProduct({ ...product, [e.target.name]: e.target.value });
+  const addHandler = (data) => {
+    addProduct.mutate(data);
+    reset();
   }
-
-  const addProduct = () => {
-    mutation.mutate(product);
-    setProduct({ id: '', name: '', price: '' });
-  }
-
-  if (isLoading) return <h1>Loading...</h1>;
-  if (error) return <h1>Error fetching data</h1>;
 
   return (
     <>
-      {
-        products.map(product => (
-          <div className="m-5">
-            <h1>ID: {product.id}, Name: {product.name}, Price: {product.price}$</h1>
-          </div>
-        ))
-      }
-      <div className="border mt-5"></div>
-      <div className="flex flex-col m-5">
-        <label>ID - {product.id}</label>
-        <input name="id" value={product.id} className="border" onChange={inputHandler} />
+      <div className="p-5">
+        <form onSubmit={handleSubmit(addHandler)} className="flex gap-2">
+          <label>ID</label>
+          <input {...register('id')} className="border" />
 
-        <label>Name - {product.name}</label>
-        <input name="name" value={product.name} className="border" onChange={inputHandler} />
+          <label>Name</label>
+          <input {...register('name')} className="border" />
 
-        <label>Price - {product.price}</label>
-        <input name="price" value={product.price} className="border" onChange={inputHandler} />
-
-        <button className="border mt-2" onClick={addProduct}>Add</button>
+          <label>Price</label>
+          <input {...register('price')} className="border" />
+          <button className="border p-1 cursor-pointer">Add</button>
+        </form>
       </div>
+    </>
+  );
+}
+
+function UpdateForm({ id, resetId }) {
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, reset } = useForm();
+
+  const { data: product, isLoading, error } = useQuery({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      const response = await fetch(`https://localhost:7284/api/product/${id}`, {
+        method: 'GET'
+      });
+
+      return await response.json();
+    }
+  });
+
+  useEffect(() => {
+    reset(product);
+  }, [product]);
+
+  const updateProduct = useMutation({
+    mutationFn: async (newProduct) => {
+      await fetch(`https://localhost:7284/api/product/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['products']);
+      resetId(0);
+    }
+  });
+
+  const updateHandler = (data) => {
+    updateProduct.mutate(data);
+  }
+
+  if (isLoading) return <h2>Loading...</h2>;
+  if (error) return <h2>Error fetching products</h2>;
+
+  return (
+    <>
+      <div className="p-5">
+        <form onSubmit={handleSubmit(updateHandler)} className="flex gap-2">
+          <label>ID</label>
+          <input {...register('id')} className="border" />
+
+          <label>Name</label>
+          <input {...register('name')} className="border" />
+
+          <label>Price</label>
+          <input {...register('price')} className="border" />
+          <button className="border p-1 cursor-pointer">Update</button>
+        </form>
+      </div>
+    </>
+  );
+}
+
+function App() {
+
+
+  return (
+    <>
+      <TanstackGetAllAndPostAndDelete />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Routes, Route, Link, useSearchParams, Outlet } from "react-router-dom";
@@ -287,12 +288,37 @@ function UpdateForm({ id, resetId }) {
   );
 }
 
+function Axios() {
+  const { data: products, isLoading, error } = useQuery({
+    queryKey: ['products'],
+    queryFn: async function getProducts() {
+      const response = await axios.get('https://localhost:7284/api/product');
+      return await response.data;
+    }
+  });
+
+  if (isLoading) return <h2>Loading...</h2>;
+  if (error) return <h2>Error fetching products</h2>;
+
+  return (
+    <>
+      <div className="border p-5">
+        {products.map((product) => (
+          <>
+            <h1>ID:{product.id}, Name: {product.name}, Price: {product.price}</h1>
+          </>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function App() {
 
 
   return (
     <>
-      <TanstackGetAllAndPostAndDelete />
+      <Axios />
     </>
   );
 }

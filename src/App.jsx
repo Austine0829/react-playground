@@ -3,6 +3,12 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Routes, Route, Link, useSearchParams, Outlet } from "react-router-dom";
+import { AuthProvider } from "../src/context/AuthContext"
+import Login from "../src/pages/Login"
+import Pages from "./components/Pages";
+import Unauthorized from "./pages/Unauthorized";
+import Admin from "./pages/Admin";
+import User from "./pages/User";
 
 function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -72,40 +78,40 @@ function RoutesForSearch() {
   );
 }
 
-function Dashboard() {
-  return (
-    <>
-      <div className="m-5">
-        <h1>Dashboard Panel</h1>
-        <Link to={'profile'}>Profile</Link>
+// function Dashboard() {
+//   return (
+//     <>
+//       <div className="m-5">
+//         <h1>Dashboard Panel</h1>
+//         <Link to={'profile'}>Profile</Link>
 
-        <Outlet />
-      </div>
-    </>
-  );
-}
+//         <Outlet />
+//       </div>
+//     </>
+//   );
+// }
 
-function Profile() {
-  return <h1 className="m-5">Profile</h1>
-}
+// function Profile() {
+//   return <h1 className="m-5">Profile</h1>
+// }
 
-function NestedRoute() {
-  return (
-    <>
-      <div className="m-5">
-        <Link to={'/dashboard'}>Dashboard</Link>
-      </div>
+// function NestedRoute() {
+//   return (
+//     <>
+//       <div className="m-5">
+//         <Link to={'/dashboard'}>Dashboard</Link>
+//       </div>
 
-      <div>
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />}>
-            <Route path="profile" element={<Profile />} />
-          </Route>
-        </Routes>
-      </div>
-    </>
-  );
-}
+//       <div>
+//         <Routes>
+//           <Route path="/dashboard" element={<Dashboard />}>
+//             <Route path="profile" element={<Profile />} />
+//           </Route>
+//         </Routes>
+//       </div>
+//     </>
+//   );
+// }
 
 function HookForm() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
@@ -315,10 +321,21 @@ function Axios() {
 
 function App() {
 
-
   return (
     <>
-      <Axios />
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+
+          <Route path="/pages" element={<Pages allowedRole={'admin'} />}>
+            <Route path="admin" element={<Admin />} />
+          </Route>
+          <Route path="/pages" element={<Pages allowedRole={'user'} />}>
+            <Route path="user" element={<User />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </>
   );
 }

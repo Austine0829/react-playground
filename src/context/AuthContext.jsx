@@ -1,31 +1,51 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import api from "../api/axios";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setAuthenticate] = useState(false);
     const [role, setRole] = useState(null);
+    const [isLoading, setLoading] = useState(true);
+
+    const isLoggedIn = async () => {
+        try {
+            const response = await api.get('/auth/verify', { withCredentials: true });
+
+            if (response.status === 200) {
+                setAuthenticate(true);
+                setRole(response.data.role);
+            } else {
+                setAuthenticate(false);
+                setRole(null);
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        isLoggedIn();
+    }, []);
 
     const login = async ({ data }) => {
+        try {
+            const response = await api.post('/auth/login', data, { withCredentials: true });
 
-        console.log(data);
+            await isLoggedIn();
 
-        if (data.email === 'peter' && data.password === 'parker') {
-            setAuthenticate(true);
-            setRole('user');
-            return true;
-        }
-
-        else {
-            setAuthenticate(false);
-            setRole(null);
-            return false;
+            return response.status === 200 ? true : false;
+        } catch (error) {
+            console.log(error);
         }
     }
 
     const value = {
         login,
         role,
+        isLoading,
         isAuthenticated
     }
 

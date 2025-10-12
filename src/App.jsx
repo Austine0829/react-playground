@@ -328,10 +328,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
-          <Route path="/pages" element={<Pages allowedRole={'admin'} />}>
+          <Route path="/pages" element={<Pages allowedRole={'Admin'} />}>
             <Route path="admin" element={<Admin />} />
           </Route>
-          <Route path="/pages" element={<Pages allowedRole={'user'} />}>
+          <Route path="/pages" element={<Pages allowedRole={'User'} />}>
             <Route path="user" element={<User />} />
           </Route>
         </Routes>

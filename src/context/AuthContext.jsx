@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "../api/axios";
+import { authAxiosInstance } from "../api/authtAxios";
 
 const AuthContext = createContext();
+const authAxios = authAxiosInstance();
 
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setAuthenticate] = useState(false);
@@ -10,7 +12,7 @@ export const AuthProvider = ({ children }) => {
 
     const isLoggedIn = async () => {
         try {
-            const response = await api.get('/auth/verify', { withCredentials: true });
+            const response = await authAxios.get('/auth/verify', { withCredentials: true });
 
             if (response.status === 200) {
                 setAuthenticate(true);

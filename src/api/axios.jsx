@@ -21,6 +21,10 @@ api.interceptors.response.use(
     async (error) => {
         const previousRequest = error.config;
 
+        if (previousRequest.url.includes('/auth/refresh')) {
+            return Promise.reject(error);
+        }
+
         if (error.response.status === 401 && !previousRequest._retry) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
@@ -35,12 +39,10 @@ api.interceptors.response.use(
 
         try {
             await api.get('/auth/refresh');
-
             previousRequestQueue(null);
-
             return api(previousRequest);
-        } catch (error) {
-            console.log(error);
+        } catch (refreshError) {
+            console.log(refreshError);
         } finally {
             isRefreshing = false;
         }
